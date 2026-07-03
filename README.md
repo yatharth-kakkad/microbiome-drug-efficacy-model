@@ -86,19 +86,6 @@ This prints the fates and the closed-form threshold (with three self-check asser
 (tumor size over time for both patients and the intervention). It runs in a few seconds on a
 laptop.
 
-## Scope and limitations
-
-This is a mechanistic illustration, not a validated clinical predictor.
-
-- The two calibration constants (`D`, `k`) are chosen for illustration, not fitted to
-  pharmacokinetic or toxicity data.
-- `G` is the scalar Loop-1 GUS category load, not a full per-taxon community composition.
-- The immune influx `s` is held at baseline to isolate the drug-metabolism channel.
-
-Natural extensions: fit `D`, `k`, and `G` to real drug-metabolism and metagenomic data, and
-replace the scalar `G` with a per-taxon composition and a learned residual on top of the
-mechanistic prior.
-
 ## References
 
 - V. Kuznetsov, I. Makalkin, M. Taylor, A. Perelson. Nonlinear dynamics of immunogenic tumors:
