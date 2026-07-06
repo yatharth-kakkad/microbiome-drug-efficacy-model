@@ -35,7 +35,7 @@ Bifidobacterium raise anti-tumor effector-immune infiltration and checkpoint-the
 Kuznetsov (1994) fast tumor-immune dynamics (report Eq. 1), tumor cells `C_T`, effector immune `C_I`:
 
 ```
-dC_T/dt = a*C_T - b*C_T^2 - n*C_T*C_I - kill(G)*C_T
+dC_T/dt = a*C_T*(1 - b*C_T) - n*C_T*C_I - kill(G)*C_T
 dC_I/dt = s(M) - d*C_I + r*C_T*C_I/(h + C_T) - m*C_T*C_I
 ```
 

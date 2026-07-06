@@ -59,7 +59,7 @@ def margin(B, G):
 
 def final_tumor(B, G, T_end=1500):
     rhs = lambda t, y: [
-        a*y[0] - b*y[0]**2 - n*y[0]*y[1] - kill(G)*y[0],
+        a*y[0]*(1 - b*y[0]) - n*y[0]*y[1] - kill(G)*y[0],
         s_of(B) - d*y[1] + r*y[0]*y[1]/(h+y[0]) - m*y[0]*y[1],
     ]
     sol = solve_ivp(rhs, (0, T_end), [C_T0, C_I0], method='LSODA',
