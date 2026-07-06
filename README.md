@@ -1,78 +1,95 @@
-# Microbiome-modulated irinotecan efficacy: a drug-metabolism control channel
+# Microbiome control of chemotherapy outcome: two parallel channels
 
-A minimal, reproducible model of how a patient's gut microbiome can decide the outcome of
-chemotherapy through drug metabolism. This is a different channel from the immune-modulation one
-used in recent hierarchical microbiome-control frameworks for cancer.
+A minimal, reproducible model of how the gut microbiome decides a chemotherapy outcome through **two
+independent channels** that feed the same tumor-immune system. The drug is irinotecan (colorectal
+cancer), the tumor-immune core is Kuznetsov et al. (1994), and the microbiome enters at exactly the
+two points the Gollwitzer et al. (2025) hierarchical-control framework allows: the drug-efficacy term
+and the immune-recruitment term.
 
-The drug is irinotecan (colorectal cancer). Its efficacy is set inside the Kuznetsov et al. (1994)
-tumor-immune dynamics by letting the delivered drug kill-rate depend on the patient's Loop-1
-beta-glucuronidase (GUS) load, using real published metagenomic data. At the same dose, a low-GUS
-patient clears the tumor and a high-GUS patient does not. The model gives a closed-form threshold
-and the minimal microbiome change that flips the outcome.
+- **Drug-metabolism channel.** Loop-1 gut beta-glucuronidase (GUS) carriers `G` reactivate SN-38 in
+  the gut, force irinotecan dose reductions, and erode the delivered kill-rate: `kill(G) = D/(1+k*G)`.
+- **Immune-recruitment channel.** Immunogenic commensals `B` raise effector-immune recruitment
+  `s(M) = s0 + s1*B` — the reference framework's own recruitment law.
 
-![Bifurcation diagram](fig1_bifurcation.png)
+At the same dose a dysbiotic patient (few commensals, high GUS) loses the tumor to escape, and the
+same patient is rescued by **either** lever alone: cut GUS to restore the drug, **or** boost
+commensals to raise immunity with the drug left eroded.
+
+![Two-channel fate map](fig1_bifurcation.png)
 
 ![Trajectories](fig2_trajectories.png)
 
 ## Mechanism
 
-Irinotecan is activated to SN-38, the cytotoxin that kills tumor cells. The liver inactivates
-SN-38 by attaching a glucuronide group, producing SN-38G, which is passed into the gut. Gut
-bacterial beta-glucuronidase (GUS) removes the glucuronide and reactivates SN-38 in the gut,
-causing dose-limiting toxicity. That toxicity forces dose reductions, so less drug reaches the
-tumor. The Loop-1 (L1) GUS structural class are the efficient SN-38G reactivators (Pollet et al.
-2017), so a patient's L1-GUS carrier abundance sets how much of the delivered dose is effectively
-lost.
+**Drug channel.** Irinotecan → SN-38 (the cytotoxin) → liver attaches a glucuronide → SN-38G → gut →
+bacterial GUS removes the glucuronide, reactivating SN-38 in the gut → dose-limiting toxicity → dose
+reductions → less drug reaches the tumor. Loop-1 (L1) GUS are the efficient reactivators (Pollet et
+al. 2017), so `G` sets how much delivered dose is lost.
+
+**Immune channel.** Gut commensals such as Faecalibacterium / Ruminococcaceae, Akkermansia and
+Bifidobacterium raise anti-tumor effector-immune infiltration and checkpoint-therapy response
+(Gopalakrishnan et al. 2018; Routy et al. 2018), so `B` sets the immune recruitment `s(M)`.
 
 ## Model
 
-Fast tumor-immune dynamics (Kuznetsov 1994), for tumor cells C_T and effector immune cells C_I:
+Kuznetsov (1994) fast tumor-immune dynamics (report Eq. 1), tumor cells `C_T`, effector immune `C_I`:
 
 ```
 dC_T/dt = a*C_T - b*C_T^2 - n*C_T*C_I - kill(G)*C_T
-dC_I/dt = s - d*C_I + p*C_T*C_I/(g + C_T) - m*C_T*C_I
+dC_I/dt = s(M) - d*C_I + r*C_T*C_I/(h + C_T) - m*C_T*C_I
 ```
 
-Microbiome drug-efficacy channel. The delivered kill-rate is eroded by the gut Loop-1 GUS load G:
+Two microbiome channels, in the same saturating / affine forms the reference framework uses:
 
 ```
-kill(G) = D / (1 + k*G)
+kill(G) = D / (1 + k*G)      # drug efficacy eroded by GUS load G     (report kappa(p) = k0/(1+p))
+s(M)    = s0 + s1*B          # immune recruitment raised by commensals (report s(M) = s0 + sum s_i M_i)
 ```
 
-This saturating form is the same as the drug-efficacy function used in the reference control
-framework, but here it is driven by GUS load rather than tumor resistance.
-
-Closed-form threshold. The tumor-free state is stable when kill(G) > a - n*s/d, which gives a
-transcritical bifurcation at:
+Linearising Eq. (1) at the tumor-free state `(C_T = 0, C_I = s(M)/d)` gives the tumor-free stability
+margin:
 
 ```
-G_crit = ( D / (a - n*s/d) - 1 ) / k
+margin(B, G) = n*s(M)/d + kill(G) - a       # > 0: tumor cleared,  < 0: tumor escapes
 ```
 
-Below G_crit the patient is curable; above it the tumor persists. The minimal intervention is to
-reduce the L1-GUS carriers below G_crit.
+Combined immune + drug pressure must beat tumor growth. The bifurcation is now a **curve** in
+`(G, B)` space (the black boundary in fig 1), not a single point. It reduces to the report's
+pure-immune threshold `s(M) > (d/n)*a` when the drug is fully eroded (`kill -> 0`), and to a pure-drug
+threshold when `B` is held fixed — so each channel is a genuine, independent lever.
 
 ## Parameters and data
 
 | Quantity | Value / source |
 |---|---|
-| `a, b, n, s, d, p, g, m` (tumor-immune) | Kuznetsov et al. 1994; curated values from BioModels `BIOMD0000000762` |
+| `a, b, n, s0, d, r, h, m` (tumor-immune) | Kuznetsov et al. 1994; BioModels `BIOMD0000000762` |
 | `C_T0, C_I0` (initial condition) | BioModels `BIOMD0000000762` |
-| `G` = Loop-1 GUS carrier abundance | Sun et al. 2022 (60 human gut metagenomes): typical near 1.3%, maximum 24.3% |
-| `D` (delivered dose), `k` (GUS sensitivity) | the only two tuned constants; illustrative, not fitted |
-
-Patients A and B use the reported low (1.3%) and high (24.3%) L1-GUS endpoints from Sun et al.
-2022. The raw metagenomes are public on NCBI SRA.
+| `G` = Loop-1 GUS carrier abundance | Sun et al. 2022 (60 gut metagenomes): ~1.3% typical, 24.3% max |
+| `B` = immunogenic-commensal abundance | order-of-magnitude from Gopalakrishnan / Routy responder cohorts |
+| `D, k` (drug channel), `s1` (immune channel) | the only tuned constants; illustrative, not fitted |
 
 ## Result
 
-| | Patient A | Patient B | B after minimal flip |
-|---|---|---|---|
-| Loop-1 GUS abundance | 1.3% | 24.3% | 4.5% |
-| Outcome (same dose) | tumor cleared | tumor persists | tumor cleared |
+Same tumor, same irinotecan dose (`D`); only the microbiome differs.
 
-G_crit is about 5.0%. The high-GUS patient is flipped to cure by reducing the validated L1-GUS
-carriers (E. coli, F. prausnitzii, B. ovatus/dorei/fragilis, R. gnavus) below the threshold.
+| | eubiotic | dysbiotic | + drug channel | + immune channel |
+|---|---|---|---|---|
+| immunogenic commensals `B` | 20% | 5% | 5% | **16%** |
+| Loop-1 GUS `G` | 2% | 24.3% | **6%** | 24.3% |
+| stability margin (/day) | +0.19 | −0.03 | +0.03 | +0.05 |
+| outcome | cleared | **escapes** | cleared | cleared |
+
+The dysbiotic patient is flipped to cure by **either** channel alone: cut GUS carriers 24.3% → 6%
+(restores the drug), **or** raise immunogenic commensals 5% → 16% with the drug left eroded (the
+report's `s(M)` mechanism). For `B > 18.1%` immunity alone clears the tumor (`s(M) > (d/n)*a`),
+recovering the report's immune-sufficient regime exactly.
+
+## Caveats
+
+Two functional groups on independent axes; a real taxon can sit in both (e.g. *F. prausnitzii* both
+carries GUS activity and is immunogenic). `D, k, s1` are illustrative, not fitted. This is a
+single-timescale forward model: it shows *where* the microbiome enters the report's fast dynamics, not
+the report's two-timescale control synthesis.
 
 ## Run
 
@@ -81,20 +98,23 @@ pip install -r requirements.txt
 python model.py
 ```
 
-This prints the fates and the closed-form threshold (with three self-check assertions) and writes
-`fig1_bifurcation.png` (final tumor burden versus Loop-1 GUS load) and `fig2_trajectories.png`
-(tumor size over time for both patients and the intervention). It runs in a few seconds on a
-laptop.
+Prints per-patient stability margins and fates (with self-checks asserting the analytic margin matches
+the simulated outcome) and writes `fig1_bifurcation.png` (two-channel fate map) and
+`fig2_trajectories.png`. Runs in a few seconds on a laptop.
 
 ## References
 
 - V. Kuznetsov, I. Makalkin, M. Taylor, A. Perelson. Nonlinear dynamics of immunogenic tumors:
   parameter estimation and global bifurcation analysis. Bull. Math. Biol. 56(2):295-321, 1994.
-  Model: BioModels `BIOMD0000000762`.
+  BioModels `BIOMD0000000762`.
+- V. Gopalakrishnan et al. Gut microbiome modulates response to anti-PD-1 immunotherapy in melanoma
+  patients. Science 359(6371):97-103, 2018.
+- B. Routy et al. Gut microbiome influences efficacy of PD-1-based immunotherapy against epithelial
+  tumors. Science 359(6371):91-97, 2018.
 - Y. Sun et al. Beta-glucuronidase pattern predicted from gut metagenomes indicates potentially
   diversified pharmacomicrobiomics. Front. Microbiol. 13:826994, 2022 (CC BY).
 - S. Pollet et al. An atlas of beta-glucuronidases in the human intestinal microbiome. Structure
   25(7):967-977, 2017.
 - A. E. Gollwitzer, D. A. Subramanian, I. Tucker, G. Traverso. Steering the Evolutionary Game:
   Hierarchical Control of Therapeutic Resistance in Cancer Treatment. NeurIPS 2025 (AI4Science).
-  This drug-metabolism channel complements the immune channel of that framework.
+  This repo's immune channel is that framework's `s(M)`; the drug-metabolism channel complements it.
